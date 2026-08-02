@@ -1,0 +1,62 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = ">= 1.14.0"
+    }
+  }
+
+  backend "s3" {
+    bucket = "himanshutest-123-622047409214-us-east-1-an"
+    key = "ai-monitoring-project/terraform.tfstate"
+    region = "us-east-1"
+
+    dynamodb_table = "ai-monitoring-project"
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+# 1. Fetch authentication tokens from AWS dynamically
+data "aws_eks_cluster_auth" "cluster" {
+  name = module.eks.cluster_name
+}
+
+# provider "kubernetes" {
+#   host                   = module.eks.cluster_endpoint
+#   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+#   token                  = data.aws_eks_cluster_auth.cluster.token
+# }
+
+# provider "helm" {
+#   # Helm v3 requires the equals sign here because 'kubernetes' is now a map attribute!
+#   kubernetes = {
+#     host                   = module.eks.cluster_endpoint
+#     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+
+#     exec = {
+#       api_version = "client.authentication.k8s.io/v1beta1"
+#       command     = "aws"
+#       args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+#     }
+#   }
+# }
+
+# provider "kubectl" {
+#   host                   = module.eks.cluster_endpoint
+#   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+#   load_config_file       = false
+
+#   exec {
+#     api_version = "client.authentication.k8s.io/v1beta1"
+#     command     = "aws"
+#     args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+#   }
+# }

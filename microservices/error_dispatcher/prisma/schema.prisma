@@ -1,0 +1,27 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ErrorLog document schema for your AI Agent pipeline
+model error_log {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  service     String   @default("nodejs-express-app")
+  message     String
+  path        String?
+  method      String?
+  statusCode  Int?
+  
+  // Custom processing state flags
+  isProcessed Boolean  @default(false)
+  aiAnalysis  String?  // Field for LLM suggestions / fixes
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
