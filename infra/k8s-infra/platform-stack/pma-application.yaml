@@ -1,0 +1,26 @@
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: pma-application
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://github.com/HimanshuSarma/argocd1.git
+#     targetRevision: HEAD
+#     ref: values
+#     # Point to the root of the repo
+#     path: k8s-infra/platform-stack/pma
+
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: mysql
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true

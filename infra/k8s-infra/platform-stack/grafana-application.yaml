@@ -1,0 +1,31 @@
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: grafana-application
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://grafana.github.io/helm-charts
+#     chart: grafana
+#     targetRevision: 8.6.0 # Check Artifact Hub for the latest version
+#     helm:
+#       values: |
+#         persistence:
+#           enabled: true
+#           type: pvc
+#           storageClassName: "ebs-gp3"
+#           size: 10Gi
+      
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: grafana # Make sure this namespace exists or let Argo create it
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true

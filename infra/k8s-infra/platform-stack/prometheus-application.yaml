@@ -1,0 +1,75 @@
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: monitoring-stack
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://prometheus-community.github.io/helm-charts
+#     chart: kube-prometheus-stack
+#     targetRevision: 86.2.3
+#     helm:
+#       values: |
+#         # Enable all major components
+#         grafana:
+#           enabled: true
+#           adminPassword: "admin"
+#           persistence:
+#             enabled: true
+#             storageClassName: "ebs-gp3"
+#             size: 10Gi
+#             annotations:
+#               helm.sh/resource-policy: "keep"
+#         prometheus:
+#           ruleSelectorNilUsesHelmValues: false
+#           serviceMonitorSelectorNilUsesHelmValues: false
+          
+#           prometheusSpec:
+#             storageSpec:
+#               volumeClaimTemplate:
+#                 spec:
+#                   storageClassName: "ebs-gp3"
+#                   resources:
+#                     requests:
+#                       storage: 10Gi
+#         alertmanager:
+#           alertmanagerSpec:
+#             storage:
+#               volumeClaimTemplate:
+#                 spec:
+#                   storageClassName: "ebs-gp3"
+#                   resources:
+#                     requests:
+#                       storage: 10Gi
+#           config:
+#             route:
+#               group_by: ['alertname']
+#               group_wait: 10s
+#               group_interval: 10s
+#               repeat_interval: 30s
+#               receiver: 'null-receiver'
+#             receivers:
+#             - name: 'null-receiver'
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: monitoring
+#   # Critical for kube-prometheus-stack to avoid sync loops with generated webhooks
+#   ignoreDifferences:
+#     - group: admissionregistration.k8s.io
+#       kind: ValidatingWebhookConfiguration
+#       jsonPointers:
+#         - /webhooks
+#     - group: admissionregistration.k8s.io
+#       kind: MutatingWebhookConfiguration
+#       jsonPointers:
+#         - /webhooks
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true

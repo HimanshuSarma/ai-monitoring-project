@@ -1,0 +1,57 @@
+# # apiVersion: argoproj.io/v1alpha1
+# # kind: Application
+# # metadata:
+# #   name: mysql
+# #   namespace: argocd
+# #   finalizers:
+# #     - resources-finalizer.argocd.argoproj.io
+# # spec:
+# #   project: default
+# #   source:
+# #     repoURL: https://charts.helm.sh/stable
+# #     targetRevision: 1.6.9
+# #     chart: mysql
+# #     helm:
+# #       values: |
+# #         mysqlRootPassword: "rootpassword"
+# #         mysqlDatabase: "mydb"
+# #         mysqlUser: "myuser"
+# #         mysqlPassword: "mypassword"
+# #         persistence:
+# #           enabled: true
+# #           existingClaim: "db-pvc"
+# #   destination:
+# #     server: https://kubernetes.default.svc
+# #     namespace: mysql
+# #   syncPolicy:
+# #     automated:
+# #       prune: true
+# #       selfHeal: true
+# #     syncOptions:
+# #       - CreateNamespace=true
+# #       - ServerSideApply=true
+# ##############################################################
+# # Credentials for the MySQL instance
+# mysqlRootPassword: "rootpassword"
+# mysqlDatabase: "mydb"
+# mysqlUser: "myuser"
+# mysqlPassword: "mypassword"
+
+# # Storage configuration
+# persistence:
+#   enabled: true
+#   # 'existingClaim' tells the Helm chart to use the PVC you define 
+#   # manually in your Git repo instead of creating a new one.
+#   existingClaim: "db-pvc" 
+
+# # If your custom PVC does not use a StorageClass, ensure this is set to empty
+# storageClass: ""
+
+# # Optional: resource requests and limits for the pod
+# resources:
+#   requests:
+#     cpu: 100m
+#     memory: 256Mi
+#   limits:
+#     cpu: 500m
+#     memory: 512Mi

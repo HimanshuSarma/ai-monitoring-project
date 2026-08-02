@@ -1,0 +1,23 @@
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: nginx
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://charts.bitnami.com/bitnami
+#     targetRevision: 18.0.0
+#     chart: nginx
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: nginx-system
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true

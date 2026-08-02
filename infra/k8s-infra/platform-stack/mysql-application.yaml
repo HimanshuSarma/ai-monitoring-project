@@ -1,0 +1,37 @@
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: mysql-application
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   # Use 'sources' (plural) to combine Helm repo and your Git repo
+#   sources:
+#     # 1. The Helm Chart
+#     - repoURL: https://charts.helm.sh/stable
+#       chart: mysql
+#       targetRevision: 1.6.9
+#       helm:
+#         valueFiles:
+#           # Now that we point to the repo root, we must provide the FULL path
+#           - $values/k8s-infra/platform-stack/mysql/helm-config/values.yaml
+    
+#     # 2. Your custom infrastructure
+#     - repoURL: https://github.com/HimanshuSarma/argocd1.git
+#       targetRevision: HEAD
+#       ref: values
+#       # Point to the root of the repo
+#       path: k8s-infra/platform-stack/mysql
+      
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: mysql # Recommended: deploy into its own namespace
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true

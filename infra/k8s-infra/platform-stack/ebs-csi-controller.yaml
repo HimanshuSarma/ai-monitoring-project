@@ -1,0 +1,54 @@
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: aws-ebs-csi-driver
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+#     chart: aws-ebs-csi-driver
+#     targetRevision: 2.61.1 # Check Artifact Hub for the latest 2.x version
+#     helm:
+#       values: |
+#         controller:
+#           serviceAccount:
+#             create: true
+#             name: ebs-csi-controller-sa
+#             annotations:
+#               # Link your specific AWS IAM Role to the service account
+#               eks.amazonaws.com/role-arn: "arn:aws:iam::622047409214:role/ebs"
+
+#           # Force the OIDC variables directly into the driver containers
+#           env:
+#             - name: AWS_ROLE_ARN
+#               value: "arn:aws:iam::622047409214:role/ebs"
+#             - name: AWS_WEB_IDENTITY_TOKEN_FILE
+#               value: "/var/run/secrets/tokens/aws-iam-token"
+          
+#           # Use the exact chart schema property keys
+#           volumes:
+#             - name: aws-iam-token
+#               projected:
+#                 sources:
+#                   - serviceAccountToken:
+#                       audience: sts.amazonaws.com
+#                       expirationSeconds: 86400
+#                       path: aws-iam-token
+#           volumeMounts:
+#             - name: aws-iam-token
+#               mountPath: /var/run/secrets/tokens
+#               readOnly: true
+
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: kube-system # Standard convention for core cluster drivers 
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true

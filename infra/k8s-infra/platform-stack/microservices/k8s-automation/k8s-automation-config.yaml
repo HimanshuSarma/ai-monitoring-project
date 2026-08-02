@@ -1,0 +1,80 @@
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: k8s-automation
+#   namespace: default
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: k8s-automation
+#   template:
+#     metadata:
+#       labels:
+#         app: k8s-automation
+#     spec:
+#       serviceAccountName: k8s-automation-sa
+#       containers:
+#       - name: k8s-automation
+#         image: index.docker.io/himanshusarma123/k8sautomation:v4
+#         ports:
+#         - containerPort: 8000
+# ---
+# apiVersion: monitoring.coreos.com/v1
+# kind: ServiceMonitor
+# metadata:
+#   name: k8s-automation-monitor
+#   namespace: default          # Keep it in the same namespace as your app
+#   labels:
+#     # CRITICAL: This label MUST match the release name of your prometheus stack
+#     release: monitoring-stack
+# spec:
+#   selector:
+#     matchLabels:
+#       app: k8s-automation
+#   endpoints:
+#   - port: http                
+#     path: /metrics            
+#     interval: 10s     
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: k8s-automation-svc
+#   namespace: default
+# spec:
+#   type: ClusterIP
+#   selector:
+#     app: k8s-automation
+#   ports:
+#     - protocol: TCP
+#       port: 8000
+#       targetPort: 8000
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: k8s-automation-sa
+#   namespace: default
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: pod-reader-clusterrole
+# rules:
+# - apiGroups: [""] # Core API group
+#   resources: ["pods"]
+#   verbs: ["list", "get"]
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRoleBinding
+# metadata:
+#   name: k8s-automation-pod-reader-binding
+# subjects:
+# - kind: ServiceAccount
+#   name: k8s-automation-sa # Linked directly to your new custom SA
+#   namespace: default
+# roleRef:
+#   kind: ClusterRole
+#   name: pod-reader-clusterrole
+#   apiGroup: rbac.authorization.k8s.io
