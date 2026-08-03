@@ -8,9 +8,10 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - http:
+  # Removing 'host:' allows NGINX to route ANY incoming domain/IP to your service
+  - http:
       paths:
-      - path: /api/backend/
+      - path: /api/backend
         pathType: Prefix
         backend:
           service:
