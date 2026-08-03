@@ -8,8 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: psychic-eureka-4qggj6wqvjrvcvgj-31897.app.github.dev
-    http:
+    - http:
       paths:
       - path: /api/backend/
         pathType: Prefix
