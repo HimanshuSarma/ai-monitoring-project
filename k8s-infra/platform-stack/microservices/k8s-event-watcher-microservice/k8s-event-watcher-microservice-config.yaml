@@ -72,7 +72,7 @@
         serviceAccountName: k8s-event-watcher-sa
         containers:
         - name: k8s-event-watcher
-          image: index.docker.io/himanshusarma123/ai-monitoring-service-k8s_event_watcher:v6
+          image: index.docker.io/himanshusarma123/ai-monitoring-service-k8s_event_watcher:v7
           ports:
           - containerPort: 8000
     strategy:

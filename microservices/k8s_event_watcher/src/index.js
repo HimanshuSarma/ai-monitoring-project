@@ -19,6 +19,9 @@ const recentFailureCache = new Map();
 
 async function handleK8sEvent(type, event) {
   try {
+
+    console.log(event, 'handleK8sEvent');
+
     const isWarning = event.type === 'Warning';
     const isCritical = ['OOMKilled', 'FailedScheduling', 'CrashLoopBackOff', 'ErrImagePull', 'Unhealthy', 'BackOff', 'Failed'].includes(event.reason);
 
