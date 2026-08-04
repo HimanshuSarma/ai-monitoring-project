@@ -1,5 +1,5 @@
-const k8s = require('@kubernetes/client-node');
-const prisma = require('./db/connection'); // Imports your Prisma client singleton
+import * as k8s from '@kubernetes/client-node';
+import prisma from './db/connection.js'; // Imports your Prisma client singleton
 
 // 1. Initialize Kubernetes Client Configuration
 const kc = new k8s.KubeConfig();

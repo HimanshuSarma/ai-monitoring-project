@@ -1,5 +1,5 @@
 // prismaClient.js
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 
 // Use global variable in development to prevent multiple Prisma client instances
 // during hot-reloads/server restarts.
@@ -13,4 +13,4 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
 
-module.exports = prisma;
+export default prisma;
