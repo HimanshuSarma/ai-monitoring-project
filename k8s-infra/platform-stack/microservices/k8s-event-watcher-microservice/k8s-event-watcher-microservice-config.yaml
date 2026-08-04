@@ -54,34 +54,34 @@
 #           periodSeconds: 10       # Check every 10 seconds
 #           failureThreshold: 5
 ---
-  # apiVersion: argoproj.io/v1alpha1
-  # kind: Rollout
-  # metadata:
-  #   name: error-dispatcher-rollout
-  # spec:
-  #   replicas: 1
-  #   revisionHistoryLimit: 1
-  #   selector:
-  #     matchLabels:
-  #       app: error-dispatcher
-  #   template:
-  #     metadata:
-  #       labels:
-  #         app: error-dispatcher
-  #     spec:
-  #       serviceAccountName: k8s-event-watcher-sa
-  #       containers:
-  #       - name: error-dispatcher
-  #         image: index.docker.io/himanshusarma123/ai-monitoring-service-error_dispatcher:v2
-  #         ports:
-  #         - containerPort: 8000
-  #   strategy:
-  #     blueGreen: 
-  #       activeService: error-dispatcher-prod-svc
-  #       previewService: error-dispatcher-staging-svc
-  #       autoPromotionEnabled: false
-  #       scaleDownDelaySeconds: 30
-  #       previewReplicaCount: 1
+  apiVersion: argoproj.io/v1alpha1
+  kind: Rollout
+  metadata:
+    name: k8s-event-watcher-rollout
+  spec:
+    replicas: 1
+    revisionHistoryLimit: 1
+    selector:
+      matchLabels:
+        app: k8s-event-watcher
+    template:
+      metadata:
+        labels:
+          app: k8s-event-watcher
+      spec:
+        serviceAccountName: k8s-event-watcher-sa
+        containers:
+        - name: k8s-event-watcher
+          image: index.docker.io/himanshusarma123/ai-monitoring-service-k8s_event_watcher:v1
+          ports:
+          - containerPort: 8000
+    strategy:
+      blueGreen: 
+        activeService: k8s-event-watcher-prod-svc
+        previewService: k8s-event-watcher-staging-svc
+        autoPromotionEnabled: false
+        scaleDownDelaySeconds: 30
+        previewReplicaCount: 1
 ---
 # apiVersion: monitoring.coreos.com/v1
 # kind: ServiceMonitor
