@@ -1,6 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 import prisma from './db/connection.js';
 
+// 1. Initialize Kubernetes Client Configuration
 const kc = new k8s.KubeConfig();
 
 try {
@@ -12,8 +13,8 @@ try {
 
 const watch = new k8s.Watch(kc);
 
-// 1. Time-based cache to prevent duplicate inserts for the same resource within a 60-second window
-const recentFailureCache = new Map(); // Key: "namespace/kind/name/reason", Value: timestamp
+// Fast in-memory cache to skip DB calls for rapid stream retries
+const recentFailureCache = new Map(); 
 
 async function handleK8sEvent(type, event) {
   try {
@@ -30,29 +31,45 @@ async function handleK8sEvent(type, event) {
     const reason = event.reason || 'UnknownReason';
     const message = event.message || event.note || 'No event description provided';
 
-    // 2. Create a unique resource signature
-    const dedupeKey = `${namespace}/${kind}/${name}/${reason}`;
+    const serviceName = `k8s-${kind.toLowerCase()}-${name}`;
+    const formattedMessage = `[K8S ${reason}] Resource: ${kind}/${name} (Namespace: ${namespace}). Details: ${message}`;
+    const path = `/namespaces/${namespace}/${kind.toLowerCase()}s/${name}`;
+
+    // 1. In-Memory Cache Check (Fast path to prevent DB query spam on fast retries)
+    const dedupeKey = `${serviceName}:${formattedMessage}`;
     const now = Date.now();
 
-    // 3. Skip if we already recorded this exact issue for this resource in the last 60 seconds
     if (recentFailureCache.has(dedupeKey)) {
       const lastSeen = recentFailureCache.get(dedupeKey);
-      if (now - lastSeen < 60000) { // 60-second window
+      if (now - lastSeen < 60000) { // 60-second in-memory cooldown
         return;
       }
     }
 
-    console.log(`🚨 [K8S EVENT RECORDED] ${event.type} | ${reason} on ${kind}/${name} in ${namespace}`);
-
-    // Update cache timestamp BEFORE database write to avoid race conditions
+    // Update in-memory cache timestamp
     recentFailureCache.set(dedupeKey, now);
 
-    // Save to Prisma database
+    // 2. Database Pre-Check: Check if this exact error message for this resource already exists in DB
+    const existingLog = await prisma.error_log.findFirst({
+      where: {
+        service: serviceName,
+        message: formattedMessage,
+      }
+    });
+
+    if (existingLog) {
+      console.log(`ℹ️ [K8S EVENT SKIPPED] Error already recorded in database for ${kind}/${name}`);
+      return;
+    }
+
+    console.log(`🚨 [K8S EVENT RECORDED] ${event.type} | ${reason} on ${kind}/${name} in ${namespace}`);
+
+    // 3. Insert into database if not already present
     await prisma.error_log.create({
       data: {
-        service: `k8s-${kind.toLowerCase()}-${name}`,
-        message: `[K8S ${reason}] Resource: ${kind}/${name} (Namespace: ${namespace}). Details: ${message}`,
-        path: `/namespaces/${namespace}/${kind.toLowerCase()}s/${name}`,
+        service: serviceName,
+        message: formattedMessage,
+        path: path,
         method: 'EVENT',
         statusCode: 500,
         isProcessed: false,
@@ -60,7 +77,7 @@ async function handleK8sEvent(type, event) {
       }
     });
 
-    // Cleanup old keys from memory
+    // Cleanup old keys from memory cache
     for (const [key, timestamp] of recentFailureCache.entries()) {
       if (now - timestamp > 60000) {
         recentFailureCache.delete(key);
@@ -81,7 +98,6 @@ async function startEventWatcher() {
     watchUrl,
     {},
     (type, event) => {
-      // Process both ADDED and MODIFIED stream events with composite deduplication
       if (type === 'ADDED' || type === 'MODIFIED') {
         handleK8sEvent(type, event);
       }
@@ -99,6 +115,7 @@ async function startEventWatcher() {
   return req;
 }
 
+// Graceful Shutdown
 process.on('SIGINT', async () => {
   console.log('Shutting down event watcher...');
   await prisma.$disconnect();
