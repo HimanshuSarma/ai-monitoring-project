@@ -142,15 +142,15 @@ roleRef:
 apiVersion: v1
 kind: Service
 metadata:
-  name: error-dispatcher-prod-svc
+  name: k8s-event-watcher-prod-svc
   namespace: default
   labels:
-    app: error-dispatcher-metrics-group
+    app: k8s-event-watcher-metrics-group
     role: production
 spec:
   type: ClusterIP
   selector:
-    app: error-dispatcher
+    app: k8s-event-watcher
   ports:
     - name: http
       protocol: TCP
@@ -160,15 +160,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: error-dispatcher-staging-svc
+  name: k8s-event-watcher-staging-svc
   namespace: default
   labels:
-    app: error-dispatcher-metrics-group
+    app: k8s-event-watcher-metrics-group
     role: staging
 spec:
   type: ClusterIP
   selector:
-    app: error-dispatcher
+    app: k8s-event-watcher
   ports:
     - name: http
       protocol: TCP
