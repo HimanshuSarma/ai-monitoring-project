@@ -11,17 +11,16 @@ datasource db {
 
 // ErrorLog document schema for your AI Agent pipeline
 model error_log {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  service     String   @default("nodejs-express-app")
+  id          Int      @id @default(autoincrement())
+  service     String
   message     String
-  path        String?
-  method      String?
-  statusCode  Int?
-  
-  // Custom processing state flags
+  path        String
+  method      String
+  statusCode  Int
   isProcessed Boolean  @default(false)
-  aiAnalysis  String?  // Field for LLM suggestions / fixes
-  
+  aiAnalysis  String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  // Prevents identical unprocessed logs for the same resource
+  @@unique([service, message, isProcessed], name: "unique_unprocessed_error")
 }

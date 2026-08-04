@@ -13,17 +13,16 @@ try {
 
 const watch = new k8s.Watch(kc);
 
-// Fast in-memory cache to skip DB calls for rapid stream retries
-const recentFailureCache = new Map(); 
+// Global synchronous cache (stores keys mapped to active promises or timestamps)
+const inFlightEvents = new Set();
+const recentFailureCache = new Map();
 
 async function handleK8sEvent(type, event) {
   try {
     const isWarning = event.type === 'Warning';
-    const isCritical = ['OOMKilled', 'FailedScheduling', 'CrashLoopBackOff', 'ErrImagePull', 'Unhealthy', 'BackOff'].includes(event.reason);
+    const isCritical = ['OOMKilled', 'FailedScheduling', 'CrashLoopBackOff', 'ErrImagePull', 'Unhealthy', 'BackOff', 'Failed'].includes(event.reason);
 
-    if (!isWarning && !isCritical) {
-      return;
-    }
+    if (!isWarning && !isCritical) return;
 
     const namespace = event.involvedObject?.namespace || event.metadata?.namespace || 'default';
     const kind = event.involvedObject?.kind || 'Unknown';
@@ -32,56 +31,61 @@ async function handleK8sEvent(type, event) {
     const message = event.message || event.note || 'No event description provided';
 
     const serviceName = `k8s-${kind.toLowerCase()}-${name}`;
+    const resourcePath = `/namespaces/${namespace}/${kind.toLowerCase()}s/${name}`;
     const formattedMessage = `[K8S ${reason}] Resource: ${kind}/${name} (Namespace: ${namespace}). Details: ${message}`;
-    const path = `/namespaces/${namespace}/${kind.toLowerCase()}s/${name}`;
 
-    // 1. In-Memory Cache Check (Fast path to prevent DB query spam on fast retries)
+    // Unique key for this specific incident state
     const dedupeKey = `${serviceName}:${formattedMessage}`;
     const now = Date.now();
 
+    // 1. SYNCHRONOUS LOCK: Check if this exact key is already processing or in cache
+    if (inFlightEvents.has(dedupeKey)) {
+      return; // Skip immediately synchronously before hitting DB or async boundary
+    }
+
     if (recentFailureCache.has(dedupeKey)) {
       const lastSeen = recentFailureCache.get(dedupeKey);
-      if (now - lastSeen < 60000) { // 60-second in-memory cooldown
+      if (now - lastSeen < 300000) { // 5-minute memory cache
         return;
       }
     }
 
-    // Update in-memory cache timestamp
+    // 2. SET LOCK SYNCHRONOUSLY BEFORE ANY AWAIT
+    inFlightEvents.add(dedupeKey);
     recentFailureCache.set(dedupeKey, now);
 
-    // 2. Database Pre-Check: Check if this exact error message for this resource already exists in DB
-    const existingLog = await prisma.error_log.findFirst({
-      where: {
-        service: serviceName,
-        message: formattedMessage,
+    try {
+      // 3. Database Pre-Check
+      const existingLog = await prisma.error_log.findFirst({
+        where: {
+          service: serviceName,
+          path: resourcePath,
+          isProcessed: false
+        }
+      });
+
+      if (existingLog) {
+        console.log(`ℹ️ [K8S EVENT SKIPPED] Open log already exists in DB for ${kind}/${name}`);
+        return;
       }
-    });
 
-    if (existingLog) {
-      console.log(`ℹ️ [K8S EVENT SKIPPED] Error already recorded in database for ${kind}/${name}`);
-      return;
-    }
+      console.log(`🚨 [K8S EVENT RECORDED] ${event.type} | ${reason} on ${kind}/${name} in ${namespace}`);
 
-    console.log(`🚨 [K8S EVENT RECORDED] ${event.type} | ${reason} on ${kind}/${name} in ${namespace}`);
-
-    // 3. Insert into database if not already present
-    await prisma.error_log.create({
-      data: {
-        service: serviceName,
-        message: formattedMessage,
-        path: path,
-        method: 'EVENT',
-        statusCode: 500,
-        isProcessed: false,
-        aiAnalysis: null
-      }
-    });
-
-    // Cleanup old keys from memory cache
-    for (const [key, timestamp] of recentFailureCache.entries()) {
-      if (now - timestamp > 60000) {
-        recentFailureCache.delete(key);
-      }
+      // 4. Create single error log entry
+      await prisma.error_log.create({
+        data: {
+          service: serviceName,
+          message: formattedMessage,
+          path: resourcePath,
+          method: 'EVENT',
+          statusCode: 500,
+          isProcessed: false,
+          aiAnalysis: null
+        }
+      });
+    } finally {
+      // 5. Release in-flight lock after async operations finish
+      inFlightEvents.delete(dedupeKey);
     }
 
   } catch (err) {
