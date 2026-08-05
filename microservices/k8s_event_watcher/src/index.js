@@ -1,5 +1,8 @@
 import * as k8s from '@kubernetes/client-node';
 import prisma from './db/connection.js';
+import express from 'express';
+
+const app = express();
 
 // 1. Initialize Kubernetes Client Configuration
 const kc = new k8s.KubeConfig();
@@ -48,7 +51,7 @@ async function handleK8sEvent(type, event) {
 
     if (recentFailureCache.has(dedupeKey)) {
       const lastSeen = recentFailureCache.get(dedupeKey);
-      if (now - lastSeen < 300000) { // 5-minute memory cache
+      if (lastSeen) { // 5-minute memory cache
         return;
       }
     }
