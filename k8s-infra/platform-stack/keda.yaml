@@ -21,6 +21,9 @@ spec:
         - name: admissionWebhooks.enabled
           value: "false"
 
+        - name: webhooks.enabled
+          value: "false"
+
         # 3. Disable High Availability (1 replica per component)
         - name: operator.replicaCount
           value: "1"
