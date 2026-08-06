@@ -1,0 +1,58 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keda
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://kedacore.github.io/charts
+    chart: keda
+    targetRevision: 2.14.0  # Uses a stable, lightweight KEDA chart release
+    helm:
+      parameters:
+        # 1. Install CRDs via Helm
+        - name: crds.install
+          value: "true"
+
+        # 2. Disable Admission Webhooks to eliminate 1 extra Pod (Saves RAM/CPU)
+        - name: admissionWebhooks.enabled
+          value: "false"
+
+        # 3. Disable High Availability (1 replica per component)
+        - name: operator.replicaCount
+          value: "1"
+        - name: metricsServer.replicaCount
+          value: "1"
+
+        # 4. Strict Resource Caps for Operator Pod
+        - name: resources.operator.requests.cpu
+          value: "50m"
+        - name: resources.operator.requests.memory
+          value: "64Mi"
+        - name: resources.operator.limits.cpu
+          value: "200m"
+        - name: resources.operator.limits.memory
+          value: "256Mi"
+
+        # 5. Strict Resource Caps for Metrics API Server Pod
+        - name: resources.metricsServer.requests.cpu
+          value: "50m"
+        - name: resources.metricsServer.requests.memory
+          value: "64Mi"
+        - name: resources.metricsServer.limits.cpu
+          value: "200m"
+        - name: resources.metricsServer.limits.memory
+          value: "256Mi"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: keda
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

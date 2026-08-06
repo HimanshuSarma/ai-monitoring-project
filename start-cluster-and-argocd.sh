@@ -105,13 +105,4 @@ echo "Argo CD Admin Password:"
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
 echo "===================================================="
 
-# 1. Download the latest release binary for Linux (AMD64)
-curl -sLO https://github.com/argoproj/argo-rollouts/releases/latest/download/kubectl-argo-rollouts-linux-amd64
-
-# 2. Grant executable permissions
-chmod +x ./kubectl-argo-rollouts-linux-amd64
-
-# 3. Move it to your local system PATH as 'kubectl-argo-rollouts'
-sudo mv ./kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
-
 chmod +x setup-platform.sh
