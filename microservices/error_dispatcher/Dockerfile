@@ -2,7 +2,17 @@
 FROM node:18-slim
 
 # Create app directory
-WORKDIR /usr/src/app
+WORKDIR /usr/src/
+
+# 1. Declare the build-time arguments (passed from GitHub Actions)
+ARG DATABASE_URL
+ARG AI_AGENT_URL
+ARG AI_MODEL
+
+# 2. Set them as runtime environment variables
+ENV DATABASE_URL=${DATABASE_URL}
+ENV AI_AGENT_URL=${AI_AGENT_URL}
+ENV AI_MODEL=${AI_MODEL}
 
 RUN apt-get update && apt-get install -y curl \
   && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \

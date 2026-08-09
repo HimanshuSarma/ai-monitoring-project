@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-    # Path filtering relative to repository root
     paths:
       - 'microservices/backend/**'
       - 'microservices/error_dispatcher/**'
@@ -15,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       # Step 1: Checkout repository code
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -63,6 +61,11 @@ jobs:
           file: ./microservices/backend/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/ai-monitoring-service-backend:${{ env.SHORT_SHA }}
+          # INJECT SECRETS HERE AS BUILD ARGS
+          build-args: |
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            AI_AGENT_URL=${{ secrets.AI_AGENT_URL }}
+            AI_MODEL=${{ secrets.AI_MODEL }}
 
       - name: Update K8s Manifest for Backend
         if: steps.filter.outputs.backend == 'true'
@@ -79,7 +82,12 @@ jobs:
           context: ./microservices/error_dispatcher
           file: ./microservices/error_dispatcher/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/ai-monitoring-service-error_dispatcher:${{ env.SHORT_SHA }}  
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/ai-monitoring-service-error_dispatcher:${{ env.SHORT_SHA }}
+          # INJECT SECRETS HERE AS BUILD ARGS
+          build-args: |
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            AI_AGENT_URL=${{ secrets.AI_AGENT_URL }}
+            AI_MODEL=${{ secrets.AI_MODEL }}
 
       - name: Update K8s Manifest for Error Dispatcher
         if: steps.filter.outputs.error_dispatcher == 'true'
@@ -97,6 +105,11 @@ jobs:
           file: ./microservices/k8s_event_watcher/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/ai-monitoring-service-k8s_event_watcher:${{ env.SHORT_SHA }}
+          # INJECT SECRETS HERE AS BUILD ARGS
+          build-args: |
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            AI_AGENT_URL=${{ secrets.AI_AGENT_URL }}
+            AI_MODEL=${{ secrets.AI_MODEL }}
 
       - name: Update K8s Manifest for K8s Event Watcher
         if: steps.filter.outputs.k8s_event_watcher == 'true'
