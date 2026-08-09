@@ -70,15 +70,15 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: qwen-llm-engine        # Updated to match Deployment metadata.name!
-  minReplicaCount: 0
-  maxReplicaCount: 3
-  cooldownPeriod: 300
-  pollingInterval: 15
+    name: qwen-llm-engine
+  minReplicaCount: 0            # Scales down to 0 pods when inactive
+  maxReplicaCount: 2            # Scales up to 2 pods maximum under heavy load
+  cooldownPeriod: 300           # Waits 5 minutes of 0 traffic before scaling down to 0
+  pollingInterval: 15           # Checks Prometheus metrics every 15 seconds
   triggers:
   - type: prometheus
     metadata:
       serverAddress: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
       metricName: http_requests_per_second
       query: sum(rate(http_requests_total{app="ai-agent"}[2m])) or vector(0)
-      threshold: '1'
+      threshold: '1'             # Active trigger (>0 reqs/sec -> scales 0 to 1, higher load -> scales 1 to 2)
