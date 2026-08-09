@@ -80,6 +80,6 @@ spec:
     metadata:
       serverAddress: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
       metricName: http_requests_per_second
-      # PromQL query checking request rate over a 2-minute window
-      query: sum(rate(http_requests_total{app="ai-agent"}[2m]))
-      threshold: '1'             # Scale up if request rate > 1 req/sec
+      # Adding 'or vector(0)' handles 0-metric edge cases safely
+      query: sum(rate(http_requests_total{app="ai-agent"}[2m])) or vector(0)
+      threshold: '1'
