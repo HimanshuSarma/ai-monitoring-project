@@ -71,7 +71,7 @@
       spec:
         containers:
         - name: backend
-          image: index.docker.io/himanshusarma123/ai-monitoring-service-backend:v3
+          image: himanshusarma123/ai-monitoring-service-backend:7cc5101
           ports:
           - containerPort: 8000
     strategy:
