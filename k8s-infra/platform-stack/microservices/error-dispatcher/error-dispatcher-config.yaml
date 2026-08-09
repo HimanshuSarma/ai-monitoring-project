@@ -75,7 +75,7 @@
       spec:
         containers:
         - name: error-dispatcher
-          image: index.docker.io/himanshusarma123/ai-monitoring-service-error_dispatcher:v4
+          image: himanshusarma123/ai-monitoring-service-error_dispatcher:1e7c09f
           ports:
           - containerPort: 8000
     strategy:
