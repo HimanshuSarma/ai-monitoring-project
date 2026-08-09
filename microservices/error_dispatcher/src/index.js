@@ -11,29 +11,22 @@ let isRunning = true;
  * Helper to call Hugging Face Serverless API
  */
 async function analyzeErrorWithLLM(log) {
-  const url = `https://router.huggingface.co/v1/chat/completions`;
+  const url = process.env.AI_AGENT_URL;
 
   try {
     const response = await axios.post(
       url,
       {
-        model: process.env.HF_MODEL,
-        messages: [
-          {
-            role: "system",
-            content: "You are an SRE expert. Provide a 2-sentence summary of the root cause and a direct fix for this error."
-          },
-          {
-            role: "user",
-            content: `Service: ${log.service}\nMessage: ${log.message}`
-          }
-        ],
-        max_tokens: 200,
-        temperature: 0.1
+        model: process.env.AI_MODEL,
+        prompt: `You are an SRE expert. Provide a 2-sentence summary of the root cause and a direct fix for this error: ${
+          `Service: ${log.service}\nMessage: ${log.message}`
+        }`,
+        // max_tokens: 200,
+        // temperature: 0.1
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.HF_API_KEY}`,
+          // Authorization: `Bearer ${process.env.HF_API_KEY}`,
           'Content-Type': 'application/json'
         },
         timeout: 30000
@@ -42,7 +35,7 @@ async function analyzeErrorWithLLM(log) {
 
     console.log(' [Hugging Face API Response]:', response.data);
 
-    return response.data.choices[0].message.content.trim();
+    return response.data.response;
   } catch (err) {
     console.error(' [Hugging Face API Error]:', err.response?.data || err.message);
     throw err;
