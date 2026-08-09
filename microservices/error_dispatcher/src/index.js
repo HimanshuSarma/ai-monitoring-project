@@ -165,4 +165,6 @@ app.get('/metrics', async (req, res) => {
 
 app.listen(8000);
 
+console.log(process.env.DATABASE_URL, "DATABASE_URL");
+
 //////
