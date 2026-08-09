@@ -75,7 +75,7 @@ spec:
     name: qwen-llm-engine
   minReplicaCount: 0            # True scale to zero
   maxReplicaCount: 2
-  cooldownPeriod: 300
+  cooldownPeriod: 120
   pollingInterval: 15
   triggers:
   - type: prometheus
