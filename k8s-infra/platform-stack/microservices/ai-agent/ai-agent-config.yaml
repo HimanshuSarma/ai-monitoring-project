@@ -78,7 +78,7 @@ spec:
   triggers:
   - type: prometheus
     metadata:
-      serverAddress: http://prometheus-server.monitoring.svc.cluster.local:9090
+      serverAddress: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
       metricName: http_requests_per_second
       # PromQL query checking request rate over a 2-minute window
       query: sum(rate(http_requests_total{app="ai-agent"}[2m]))
