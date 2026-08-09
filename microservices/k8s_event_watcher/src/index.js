@@ -7,7 +7,7 @@ import promClient from "prom-client";
 const errorCounter = new promClient.Counter({
   name: 'k8s_error_events_total',
   help: 'Total Kubernetes error events detected and dispatched',
-  labelNames: ['severity', 'service']
+  labelNames: ['severity']
 });
 
 const app = express();
@@ -101,7 +101,6 @@ async function handleK8sEvent(type, event) {
 
       errorCounter.inc({ 
         severity: 'critical', 
-        service: serviceName 
       });
     } finally {
       // 5. Release in-flight lock after async operations finish

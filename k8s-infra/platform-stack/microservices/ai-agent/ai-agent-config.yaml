@@ -84,4 +84,4 @@ spec:
       metricName: http_requests_per_second
       # Query traffic hitting the ALWAYS-RUNNING ai-agent microservice
       query: sum(increase(k8s_error_events_total[2m])) or vector(0)
-      threshold: '10'
+      threshold: '1'
