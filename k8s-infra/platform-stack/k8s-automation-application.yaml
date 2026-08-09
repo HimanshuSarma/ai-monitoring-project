@@ -1,25 +1,25 @@
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: k8s-automation-microservice
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  # Use singular 'source' for a single Git directory
-  source: 
-    repoURL: https://github.com/HimanshuSarma/argocd1.git
-    targetRevision: HEAD
-    path: k8s-infra/platform-stack/microservices/k8s-automation
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: k8s-automation-microservice
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   # Use singular 'source' for a single Git directory
+#   source: 
+#     repoURL: https://github.com/HimanshuSarma/argocd1.git
+#     targetRevision: HEAD
+#     path: k8s-infra/platform-stack/microservices/k8s-automation
       
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: default
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: default
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true
