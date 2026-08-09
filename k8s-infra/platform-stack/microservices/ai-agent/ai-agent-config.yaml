@@ -6,12 +6,16 @@ metadata:
   labels:
     app: qwen-llm
 spec:
-  replicas: 1 # KEDA will scale this dynamically (0 <-> N)
+  replicas: 1
   selector:
     matchLabels:
       app: qwen-llm
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "11434"
+        prometheus.io/path: "/metrics"
       labels:
         app: qwen-llm
     spec:
@@ -19,10 +23,8 @@ spec:
       - name: qwen-inference
         image: ollama/ollama:latest
         env:
-        # Load the 1.5B Instruct model directly on startup
         - name: OLLAMA_MODELS
           value: "/root/.ollama/models"
-        # Command to pull and serve the lightweight Qwen2.5 1.5B model
         command: ["/bin/sh", "-c"]
         args:
         - |
@@ -44,7 +46,7 @@ spec:
           httpGet:
             path: /
             port: 11434
-          initialDelaySeconds: 15 # Fast cold start for quantized 1.5B on CPU
+          initialDelaySeconds: 15
           periodSeconds: 5
 ---
 apiVersion: v1
@@ -71,14 +73,15 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: qwen-llm-engine
-  minReplicaCount: 0            # Scales down to 0 pods when inactive
-  maxReplicaCount: 2            # Scales up to 2 pods maximum under heavy load
-  cooldownPeriod: 300           # Waits 5 minutes of 0 traffic before scaling down to 0
-  pollingInterval: 15           # Checks Prometheus metrics every 15 seconds
+  minReplicaCount: 0            # True scale to zero
+  maxReplicaCount: 2
+  cooldownPeriod: 300
+  pollingInterval: 15
   triggers:
   - type: prometheus
     metadata:
       serverAddress: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
       metricName: http_requests_per_second
+      # Query traffic hitting the ALWAYS-RUNNING ai-agent microservice
       query: sum(rate(http_requests_total{app="ai-agent"}[2m])) or vector(0)
-      threshold: '1'             # Active trigger (>0 reqs/sec -> scales 0 to 1, higher load -> scales 1 to 2)
+      threshold: '1'
