@@ -1,29 +1,29 @@
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: argo-rollouts
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  # Single source pointing directly to the official Helm chart
-  source:
-    repoURL: https://argoproj.github.io/argo-helm
-    chart: argo-rollouts
-    targetRevision: 2.38.0  # Uses stock chart defaults
-    helm:
-      parameters:
-        # Ensures CRDs (Rollout, AnalysisTemplate, etc.) are installed
-        - name: installCRDs
-          value: "true"
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argo-rollouts
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: argo-rollouts
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+# spec:
+#   project: default
+#   # Single source pointing directly to the official Helm chart
+#   source:
+#     repoURL: https://argoproj.github.io/argo-helm
+#     chart: argo-rollouts
+#     targetRevision: 2.38.0  # Uses stock chart defaults
+#     helm:
+#       parameters:
+#         # Ensures CRDs (Rollout, AnalysisTemplate, etc.) are installed
+#         - name: installCRDs
+#           value: "true"
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: argo-rollouts
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true

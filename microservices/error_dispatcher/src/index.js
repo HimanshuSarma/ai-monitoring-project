@@ -1,5 +1,7 @@
 require('dotenv').config();
 const axios = require('axios');
+const promClient = require('prom-client');
+const express = require('express');
 const prisma = require('./db/connection');
 
 // Polling Interval: 20 seconds (20,000 ms)
@@ -7,39 +9,42 @@ const POLL_INTERVAL_MS = 5000;
 let isProcessing = false;
 let isRunning = true;
 
-/**
- * Helper to call Hugging Face Serverless API
- */
 async function analyzeErrorWithLLM(log) {
   const url = process.env.AI_AGENT_URL;
+  
+  // Retry strategy: 6 retries * 5 seconds = 30 seconds total tolerance
+  const maxRetries = 6;
+  const retryDelayMs = 5000;
 
-  try {
-    const response = await axios.post(
-      url,
-      {
-        model: process.env.AI_MODEL,
-        prompt: `You are an SRE expert. Provide a 2-sentence summary of the root cause and a direct fix for this error: ${
-          `Service: ${log.service}\nMessage: ${log.message}`
-        }`,
-        stream: false
-        // max_tokens: 200,
-        // temperature: 0.1
-      },
-      {
-        headers: {
-          // Authorization: `Bearer ${process.env.HF_API_KEY}`,
-          'Content-Type': 'application/json'
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[Attempt ${attempt}/${maxRetries}] Calling Qwen LLM Engine...`);
+      
+      const response = await axios.post(
+        url,
+        {
+          model: process.env.AI_MODEL || 'qwen2.5:1.5b',
+          prompt: `You are an SRE expert. Provide a 2-sentence summary of the root cause and a direct fix for this error:\nService: ${log.service}\nMessage: ${log.message}`,
+          stream: false
         },
-        timeout: 30000
+        {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 30000 // Allow up to 30s for the LLM to generate tokens once connected
+        }
+      );
+
+      return response.data.response;
+
+    } catch (err) {
+      const isNetworkError = err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.response?.status === 503;
+      
+      if (isNetworkError && attempt < maxRetries) {
+        console.warn(`[Cold Start] Qwen engine not ready yet (${err.message}). Retrying in ${retryDelayMs / 1000}s...`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      } else {
+        throw err; // Re-throw if it's a real failure or retries are exhausted
       }
-    );
-
-    console.log(' [Hugging Face API Response]:', response.data);
-
-    return response.data.response;
-  } catch (err) {
-    console.error(' [Hugging Face API Error]:', err.response?.data || err.message);
-    throw err;
+    }
   }
 }
 
@@ -149,3 +154,13 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Start Worker
 startPollingLoop();
+
+
+// Internal metrics endpoint for Prometheus scraping
+const app = express();
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', promClient.register.contentType);
+  res.end(await promClient.register.metrics());
+});
+
+app.listen(8000);

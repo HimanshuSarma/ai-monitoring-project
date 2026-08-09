@@ -1,6 +1,14 @@
 import * as k8s from '@kubernetes/client-node';
 import prisma from './db/connection.js';
 import express from 'express';
+import promClient from "prom-client";
+
+// Register Custom Metric
+const errorCounter = new promClient.Counter({
+  name: 'k8s_error_events_total',
+  help: 'Total Kubernetes error events detected and dispatched',
+  labelNames: ['severity', 'service']
+});
 
 const app = express();
 
@@ -51,7 +59,8 @@ async function handleK8sEvent(type, event) {
 
     if (recentFailureCache.has(dedupeKey)) {
       const lastSeen = recentFailureCache.get(dedupeKey);
-      if (lastSeen) { // 5-minute memory cache
+      const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+      if (now - lastSeen < CACHE_TTL_MS) {
         return;
       }
     }
@@ -88,6 +97,11 @@ async function handleK8sEvent(type, event) {
           isProcessed: false,
           aiAnalysis: null
         }
+      });
+
+      errorCounter.inc({ 
+        severity: 'critical', 
+        service: serviceName 
       });
     } finally {
       // 5. Release in-flight lock after async operations finish
@@ -133,3 +147,10 @@ process.on('SIGINT', async () => {
 });
 
 startEventWatcher();
+
+// Metrics endpoint for Prometheus
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', promClient.register.contentType);
+  res.end(await promClient.register.metrics());
+});
+app.listen(8000);
