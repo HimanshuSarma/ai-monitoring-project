@@ -21,6 +21,7 @@ async function analyzeErrorWithLLM(log) {
         prompt: `You are an SRE expert. Provide a 2-sentence summary of the root cause and a direct fix for this error: ${
           `Service: ${log.service}\nMessage: ${log.message}`
         }`,
+        stream: false
         // max_tokens: 200,
         // temperature: 0.1
       },
