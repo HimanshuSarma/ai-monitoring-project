@@ -65,12 +65,12 @@ apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
   name: ai-agent-keda-scaler
-  namespace: default            # Must match the namespace of your deployment!
+  namespace: default
 spec:
   scaleTargetRef:
-    apiVersion: apps/v1          # Must be apps/v1 for Deployments
-    kind: Deployment             # Case-sensitive
-    name: ai-agent-deployment    # MUST match 'kubectl get deployment -n default'
+    apiVersion: apps/v1
+    kind: Deployment
+    name: qwen-llm-engine        # Updated to match Deployment metadata.name!
   minReplicaCount: 0
   maxReplicaCount: 3
   cooldownPeriod: 300
