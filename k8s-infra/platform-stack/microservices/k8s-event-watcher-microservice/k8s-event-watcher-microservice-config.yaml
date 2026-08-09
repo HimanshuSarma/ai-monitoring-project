@@ -87,6 +87,22 @@
         scaleDownDelaySeconds: 30
         previewReplicaCount: 1
 ---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: k8s-event-watcher-servicemonitor
+  namespace: default
+  labels:
+    release: prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: k8s-event-watcher-metrics-group
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 10s
+---
 # apiVersion: monitoring.coreos.com/v1
 # kind: ServiceMonitor
 # metadata:
