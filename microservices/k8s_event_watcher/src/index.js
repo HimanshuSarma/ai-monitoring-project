@@ -44,6 +44,11 @@ async function handleK8sEvent(type, event) {
     const reason = event.reason || 'UnknownReason';
     const message = event.message || event.note || 'No event description provided';
 
+    if (name.includes('qwen-llm-engine') || name.includes('k8s-event-watcher')) {
+      console.log(`ℹ️ [K8S EVENT IGNORED] Self/LLM Pod Event: ${kind}/${name} (${reason})`);
+      return;
+    }
+
     const serviceName = `k8s-${kind.toLowerCase()}-${name}`;
     const resourcePath = `/namespaces/${namespace}/${kind.toLowerCase()}s/${name}`;
     const formattedMessage = `[K8S ${reason}] Resource: ${kind}/${name} (Namespace: ${namespace}). Details: ${message}`;
