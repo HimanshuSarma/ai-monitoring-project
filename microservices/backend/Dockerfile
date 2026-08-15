@@ -22,4 +22,4 @@ COPY . .
 EXPOSE 8000
 
 # Start the server
-CMD [ "node", "index.js" ]
+CMD [ "node", "./src/index.js" ]

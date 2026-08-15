@@ -50,9 +50,7 @@ jobs:
         run: |
           echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-      # =======================================================
-      # SERVICE 1: backend
-      # =======================================================
+      # 1ST SERVICE: backend
       - name: Build and Push Backend
         if: steps.filter.outputs.backend == 'true'
         uses: docker/build-push-action@v5
@@ -72,9 +70,7 @@ jobs:
         run: |
           sed -i "s|image: .*/ai-monitoring-service-backend:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/ai-monitoring-service-backend:${{ env.SHORT_SHA }}|g" k8s-infra/platform-stack/microservices/backend/backend-config.yaml
 
-      # =======================================================
-      # SERVICE 2: error_dispatcher
-      # =======================================================
+      # 2nd SERVICE: backend
       - name: Build and Push Error Dispatcher
         if: steps.filter.outputs.error_dispatcher == 'true'
         uses: docker/build-push-action@v5
@@ -94,9 +90,7 @@ jobs:
         run: |
           sed -i "s|image: .*/ai-monitoring-service-error_dispatcher:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/ai-monitoring-service-error_dispatcher:${{ env.SHORT_SHA }}|g" k8s-infra/platform-stack/microservices/error-dispatcher/error-dispatcher-config.yaml
 
-      # =======================================================
-      # SERVICE 3: k8s_event_watcher
-      # =======================================================
+      # 3rd SERVCICE: k8s_event_watcher
       - name: Build and Push K8s Event Watcher
         if: steps.filter.outputs.k8s_event_watcher == 'true'
         uses: docker/build-push-action@v5
@@ -116,9 +110,7 @@ jobs:
         run: |
           sed -i "s|image: .*/ai-monitoring-service-k8s_event_watcher:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/ai-monitoring-service-k8s_event_watcher:${{ env.SHORT_SHA }}|g" k8s-infra/platform-stack/microservices/k8s-event-watcher-microservice/k8s-event-watcher-microservice-config.yaml
 
-      # =======================================================
-      # FINAL STEP: Commit and Push Manifest Changes Back to Git
-      # =======================================================
+      # Push the file changes to github
       - name: Commit and Push Updated Manifests
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
