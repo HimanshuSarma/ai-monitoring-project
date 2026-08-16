@@ -15,7 +15,7 @@
   A long-running service leverages the **Kubernetes API** (`k8sclient`) to capture both **application-level** and **cluster-level** error events asynchronously as they occur.
 
 * **Prometheus Metrics & KEDA Autoscaling**  
-  Error event counts are exposed as custom **Prometheus metrics**. **KEDA (Kubernetes Event-driven Autoscaling)** continuously monitors these metric spikes to dynamically scale the **AI Agent microservice**—automatically scaling up during error spikes and scaling down to **0 pods** during idle periods to eliminate resource wastage.
+  Error event counts are exposed as custom **Prometheus metrics** via the `k8s_event_watcher` service. **KEDA (Kubernetes Event-driven Autoscaling)** continuously monitors these metric spikes to dynamically scale the **AI Agent microservice**—automatically scaling up during error spikes and scaling down to **0 pods** during idle periods to eliminate resource wastage.
 
 * **AI-Powered Incident Triage**  
   When triggered and scaled up by **KEDA**, the **AI Agent** extracts log contexts and stack traces, transmitting them to an **LLM** to generate instant **2-sentence root-cause summaries** and actionable fix recommendations.
@@ -39,7 +39,7 @@
    Contains core application logic (e.g., sample `/users` endpoints configured to throw application-level errors for specific IDs). Captured errors are immediately written to the shared data store (Redis/Database).
 
 2. **`k8s_event_watcher` Service**  
-   A long-running listener that watches the Kubernetes API server for cluster-level error events in real time. Uses an **in-memory lookup map** to deduplicate events and prevent repetitive entries from cluttering the data store.
+   A long-running listener that watches the Kubernetes API server for cluster-level error events in real time. Uses an **in-memory lookup map** to deduplicate events and prevent repetitive entries from cluttering the data store. It exposes the error event count directly to **Prometheus** through a `/metrics` endpoint.
 
 3. **`error_dispatcher` Service**  
    Pulls unprocessed error payloads from the central data store, structures detailed prompts containing error logs and context, and dispatches them to the `ai-agent` service endpoint.
@@ -65,14 +65,14 @@ flowchart TD
             K8sAPI["K8s API Server\n(Cluster Events)"]
         end
 
-        subgraph Ingestion["Ingestion & Storage"]
+        subgraph Ingestion["Ingestion & Monitoring"]
             EW["k8s_event_watcher\n(Deduplication Cache Map)"]
             Store[("Data Store\n(Redis / DB)")]
         end
 
         subgraph Dispatch["Processing & Metrics"]
+            Prom["Prometheus\n(Scrapes /metrics)"]
             ED["error_dispatcher Service"]
-            Prom["Prometheus\n(Error Metrics)"]
         end
 
         subgraph ScalingAI["Dynamic AI Layer"]
@@ -84,9 +84,9 @@ flowchart TD
     %% Flow Connections
     BE -->|1. Push App Errors| Store
     K8sAPI -->|1. Event Stream| EW
-    EW -->|2. Deduplicated Cluster Errors| Store
+    EW -->|2. Write Cluster Errors| Store
+    EW -->|3. Expose /metrics| Prom
 
-    Store -->|3. Expose Metrics| Prom
     Store -->|4. Pull Unprocessed Errors| ED
 
     Prom -->|5. Metrics Rule Check| KEDA
