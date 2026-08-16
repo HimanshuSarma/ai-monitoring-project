@@ -9,7 +9,7 @@ spec:
   project: default
   # Use 'sources' (plural) to combine Helm repo and your Git repo
   source:
-    repoURL: https://github.com/himanshusarma074/ai-monitoring-project.git
+    repoURL: https://github.com/HimanshuSarma/ai-monitoring-project.git
     targetRevision: HEAD
     ref: values
     path: k8s-infra/platform-stack/ingress
