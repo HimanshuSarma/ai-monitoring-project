@@ -1,58 +1,17 @@
-# 🚀 Cloud-Native AI Observability & Microservices Platform
+Kubernetes AI-Driven Error Monitoring & Autoscaling System
+1. Project Overview & Purpose
+Purpose
+This project is a Kubernetes monitoring and automated triage system designed to detect application and cluster-level errors in real time, expose operational metrics, dynamically scale an AI agent for incident analysis, and manage releases using GitOps and progressive delivery practices.
 
-An enterprise-grade, high-concurrency microservices platform featuring automated AWS infrastructure via Terraform, GitOps deployment via ArgoCD on Kubernetes, and an **LLM-driven AI Observability Watcher** for real-time cluster incident response.
+Key Features
+Real-time Error Collection: A long-running service uses the Kubernetes API (k8sclient) to capture application-level and cluster-level error events as they occur.
 
----
+Prometheus Metrics & KEDA Autoscaling: Error event counts are exposed as custom Prometheus metrics. KEDA (Kubernetes Event-driven Autoscaling) monitors these metrics to dynamically scale the AI Agent microservice—scaling up on error spikes and scaling down to 0 pods during idle periods to save resources.
 
-## 🏛️ High-Level System Architecture
+AI-Powered Incident Triage: When scaled up, the AI Agent fetches log contexts and stack traces, passing them to an LLM to generate instant 2-sentence root-cause summaries and fix recommendations.
 
-```mermaid
-flowchart TD
-    subgraph AWS_Cloud ["AWS Cloud Infrastructure (Provisioned via Terraform)"]
-        direction TB
-        
-        subgraph Network ["VPC Network (10.0.0.0/16)"]
-            PublicSubnet["Public Subnets<br/>(Internet Gateway, NAT Gateways)"]
-            PrivateSubnet["Private Subnets<br/>(Worker Nodes, Internal DBs)"]
-        end
+GitOps via ArgoCD: Cluster configurations and application manifests are declaratively synchronized using ArgoCD, keeping Git as the single source of truth.
 
-        subgraph EKS_Cluster ["Amazon EKS Cluster"]
-            direction LR
-            Ingress["NGINX Ingress Controller"]
-            
-            subgraph App_Namespace ["Application Namespace"]
-                API["Node.js API Gateway"]
-                Backend["Laravel Backend Service"]
-                AI_Agent["AI LLM Watcher Microservice"]
-            end
-            
-            subgraph Platform_Namespace ["Platform Namespace"]
-                ArgoCD["ArgoCD / Rollouts"]
-                Redis["Redis Master-Replica Cluster"]
-                DB[("PostgreSQL Database")]
-            end
-        end
-    end
+Progressive Delivery via Argo Rollouts: Manages releases and deployment monitoring using Argo Rollouts configured with a Blue/Green deployment strategy for zero-downtime updates and instant rollbacks.
 
-    %% External Connections
-    User([External Client / Frontend]) -->|HTTPS| Ingress
-    Ingress -->|HTTP Traffic| API
-    
-    %% Service Connections
-    API -->|REST / WebSockets| Backend
-    API <-->|Pub/Sub & Locks| Redis
-    Backend <-->|SQL Queries| DB
-    
-    %% Observability Loop
-    AI_Agent -.->|K8s Events API| EKS_Cluster
-    AI_Agent -->|Stack Traces| LLM[("External / Local LLM")]
-    LLM -->|Incident Triage| AI_Agent
-    AI_Agent -->|Alert Summaries| Slack([Slack / Notification Webhook])
-
-    %% Styling
-    classDef aws fill:#FF9900,stroke:#232F3E,stroke-width:2px,color:#fff;
-    classDef k8s fill:#326CE5,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef db fill:#336791,stroke:#fff,stroke-width:2px,color:#fff;
-    class EKS_Cluster aws;
-    class API,Backend,AI_Agent,ArgoCD k8s;
-    class Redis,DB db;
+Infrastructure as Code: Underlying cloud infrastructure and cluster components are provisioned completely as code using Terraform.
